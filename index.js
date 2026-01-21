@@ -1,54 +1,60 @@
 const express = require('express');
+const axios = require('axios'); // Necesitaremos esta librería para enviar datos a Meta
 const app = express();
 app.use(express.json());
 
-// --- 1. CONFIGURACIÓN DE SEGURIDAD ---
-// Este es el token que tú inventas. 
-// Debes poner el MISMO en el panel de Meta cuando configures el Webhook.
-const VERIFY_TOKEN = "47d2812e-a3ae-4697-871a-10a5fa363347"; 
+// --- CONFIGURACIÓN ---
+const VERIFY_TOKEN = "47d2812e-a3ae-4697-871a-10a5fa363347"; // El que ya usaste en el Webhook
+const ACCESS_TOKEN = "EAAKwmTV97XABQhlhvoNISP96GUBhZCZByJLuZAC8woxlbNRAZCcnu6wELWc8KhKyCWBUNkZBS49xQMeKRkE4YKXvLnZAuxGVzdcANeSPShTRigELucLFw0lnMvKmDDkchLuvta7G74gKs9QCDINDY6sX70y8SeBmfsEh5TIyGZBKEHee3gXmay0MZCjEWgGHxqL5uCKVFZArHEXOTgLHqHJZASSBgVd4a3RomZBTKWPdeyemcHxyHqkyu0SGT8k8YyAscDERn0kXPgR5Vx2HwQOnYGZAX0CCE9WRwF8tigZDZD"; 
+const PHONE_NUMBER_ID = "916360421552548";
 
-// --- 2. VERIFICACIÓN DEL WEBHOOK (MÉTODO GET) ---
-// Meta llama a esta ruta para asegurarse de que tu servidor existe y es seguro.
+// Verificación del Webhook
 app.get('/webhook', (req, res) => {
     const mode = req.query['hub.mode'];
     const token = req.query['hub.verify_token'];
     const challenge = req.query['hub.challenge'];
 
-    if (mode && token) {
-        if (mode === 'subscribe' && token === VERIFY_TOKEN) {
-            console.log('WEBHOOK_VERIFIED');
-            res.status(200).send(challenge);
-        } else {
-            res.sendStatus(403); // Token incorrecto
-        }
+    if (mode === 'subscribe' && token === VERIFY_TOKEN) {
+        res.status(200).send(challenge);
+    } else {
+        res.sendStatus(403);
     }
 });
 
-// --- 3. RECEPCIÓN DE MENSAJES (MÉTODO POST) ---
-// Aquí es donde Meta te enviará los mensajes que tus clientes escriban.
-app.post('/webhook', (req, res) => {
+// Recepción y Respuesta de mensajes
+app.post('/webhook', async (req, res) => {
     const body = req.body;
 
-    // Verificamos que sea un evento de WhatsApp
     if (body.object === 'whatsapp_business_account') {
-        if (body.entry && body.entry[0].changes && body.entry[0].changes[0].value.messages) {
-            
-            const mensajeOriginal = body.entry[0].changes[0].value.messages[0];
-            const textoUsuario = mensajeOriginal.text ? mensajeOriginal.text.body : "No es texto";
-            const numeroUsuario = mensajeOriginal.from;
+        if (body.entry && body.entry[0].changes[0].value.messages) {
+            const msg = body.entry[0].changes[0].value.messages[0];
+            const from = msg.from; // Número del usuario
+            const text = msg.text.body; // Texto que envió
 
-            console.log(`Mensaje de ${numeroUsuario}: ${textoUsuario}`);
-            
-            // Aquí podrías agregar la lógica para responder (usando un fetch/axios a la API de Meta)
+            console.log(`Mensaje recibido de ${from}: ${text}`);
+
+            // LÓGICA DE RESPUESTA
+            try {
+                await axios({
+                    method: "POST",
+                    url: `https://graph.facebook.com/v21.0/${PHONE_NUMBER_ID}/messages`,
+                    data: {
+                        messaging_product: "whatsapp",
+                        to: from,
+                        text: { body: "¡Hola! Soy tu bot de ventas. Recibí tu mensaje: " + text },
+                    },
+                    headers: { "Authorization": `Bearer ${ACCESS_TOKEN}` },
+                });
+                console.log("Respuesta enviada con éxito");
+            } catch (error) {
+                console.error("Error al enviar:", error.response ? error.response.data : error.message);
+            }
         }
-        res.sendStatus(200); // Siempre responder 200 a Meta para que no reintente
+        res.sendStatus(200);
     } else {
         res.sendStatus(404);
     }
 });
 
-// --- 4. INICIO DEL SERVIDOR ---
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-    console.log(`Servidor activo en puerto ${PORT}`);
-});
+app.listen(PORT, () => console.log(`Servidor activo en puerto ${PORT}`));
