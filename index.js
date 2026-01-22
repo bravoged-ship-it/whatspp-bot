@@ -3,9 +3,9 @@ const axios = require('axios');
 const app = express();
 app.use(express.json());
 
-// --- CONFIGURACIÓN (Usa tus datos que ya funcionan) ---
-const VERIFY_TOKEN = "47d2812e-a3ae-4697-871a-10a5fa363347"; 
-const ACCESS_TOKEN = "EAAKwmTV97XABQohfBxyY5Kbr6OHmJOU9iglZCCwPh28m4Xq6cZCft2CeyRWKDgyYLPilOaFZAPsmLYTyPUd9vcMK6IrazqnCjmXyApClvcFv3XbATxwjSksrKrrZCP6ZBC6ZCx2gXPUEsEGxzRT26T3ldQ0GxA7d5Va1VxqNquCDPqnYJI0IOwe69vmpN1U9epUNrMyvsxDKXMfuqZCKhD3C7FbyJJhVudNOUO1yd2tSAFhzonVL5xldf3r2IzGLEHIkeNyKnvZCpNKHdqy53VoaKZBviUKsu4jFhvg04"; 
+// --- CONFIGURACIÓN ---
+const VERIFY_TOKEN = process.env.VERIFY_TOKEN || "47d2812e-a3ae-4697-871a-10a5fa363347"; 
+const ACCESS_TOKEN = process.env.ACCESS_TOKEN || "EAAKwmTV97XABQohfBxyY5Kbr6OHmJOU9iglZCCwPh28m4Xq6cZCft2CeyRWKDgyYLPilOaFZAPsmLYTyPUd9vcMK6IrazqnCjmXyApClvcFv3XbATxwjSksrKrrZCP6ZBC6ZCx2gXPUEsEGxzRT26T3ldQ0GxA7d5Va1VxqNquCDPqnYJI0IOwe69vmpN1U9epUNrMyvsxDKXMfuqZCKhD3C7FbyJJhVudNOUO1yd2tSAFhzonVL5xldf3r2IzGLEHIkeNyKnvZCpNKHdqy53VoaKZBviUKsu4jFhvg04"; 
 const PHONE_NUMBER_ID = "916360421552548"; 
 
 app.get('/webhook', (req, res) => {
@@ -25,33 +25,43 @@ app.post('/webhook', async (req, res) => {
         if (body.entry && body.entry[0].changes[0].value.messages) {
             const msg = body.entry[0].changes[0].value.messages[0];
             const from = msg.from; 
+            
+            // Si el mensaje no tiene texto (es una imagen o audio), evitamos que truene el código
             const text = msg.text ? msg.text.body.trim().toLowerCase() : "";
 
-            // Lógica para limpiar el número de México
+            // Lógica para limpiar el número de México (521 -> 52)
             let numeroDestino = from;
             if (from.startsWith("521")) {
                 numeroDestino = "52" + from.substring(3);
             }
 
-            // --- LÓGICA DEL MENÚ ---
             let respuestaBot = "";
 
+            // --- LÓGICA DE VALIDACIÓN ---
+            const tieneCorreo = text.includes("@") && text.includes(".");
+            const tieneTelefono = /\d{8,}/.test(text);
+
+            // --- FLUJO DE DECISIÓN ---
             if (text === "1") {
-                respuestaBot = "🏭 *Ayúdenos a ofrecerle la mejor solución, por favor indíque los datos necesarios:* \n¿De qué parte de la república se comunica? \n¿Qué tecnología de envasado es de su interés? \n¿Qué productos desea empacar";
+                respuestaBot = "🏭 *Ayúdenos a ofrecerle la mejor solución, por favor indíque los datos necesarios:* \n\n¿De qué parte de la república se comunica? \n¿Qué tecnología de envasado es de su interés? \n¿Qué productos desea empacar?";
             } else if (text === "2") {
-                respuestaBot = "🔩 *Que podemos hacer por usted en Servicio técnico?:* \nVenta de repuestos. \nVenta de servicios de mantenimiento. \nPara ofrecerle la mejor atención indíque el modelo de su equipo, no. de serie y/o código de repuesto";
+                respuestaBot = "🔩 *Que podemos hacer por usted en Servicio técnico?:* \n\nVenta de repuestos. \nVenta de servicios de mantenimiento. \n\nPara ofrecerle la mejor atención indíque el modelo de su equipo, no. de serie y/o código de repuesto.";
             } else if (text === "3") {
-                respuestaBot = "🏢 *¿A qué área te gustaría contactar?:* \nFacturación de equipos \nFacturación de servicios/ refacciones \nCuentas por cobrar, \nCuentas por pagar \nRecursos Humanos";
+                respuestaBot = "🏢 *¿A qué área te gustaría contactar?:* \n\n• Facturación de equipos \n• Facturación de servicios/refacciones \n• Cuentas por cobrar/pagar \n• Recursos Humanos";
             } else if (text === "4") {
-                respuestaBot = "👤 *Agente Humano:*\nEn un momento un asesor se pondrá en contacto con usted.";
+                respuestaBot = "👤 *Agente Humano:*\nEn un momento un asesor se pondrá en contacto con usted para darle atención personalizada.";
+            } 
+            else if (tieneCorreo || tieneTelefono) {
+                respuestaBot = "✅ *Datos registrados con éxito.* Hemos recibido su contacto. Un asesor de ULMA Packaging se comunicará con usted a la brevedad. ¡Que tenga un excelente día! 👋";
             }
             else if (text.length > 5) {
-                respuestaBot = "✅ *Información recibida.* Por favor comparta un correo electrónico y número telefónico y en breve un asesor se pondrá en contacto con usted. ¡Gracias!";
-            }
+                respuestaBot = "✅ *Información recibida.* Por favor comparta un **correo electrónico** y **número telefónico** para que un asesor pueda contactarlo formalmente. ¡Gracias!";
+            } 
             else {
-                respuestaBot = "🙌 ¡Hola! Gracias por comunicarte a ULMA Packaging México, Soluciones en envasado. \n¿Cómo te podemos ayudar?, elige la opción que más se acomode a tus necesidades indicando el número:\n1️⃣ Venta de maquinaria \n2️⃣ Servicio técnico y repuestos\n3️⃣ Administración y Finanzas \n4️⃣ Atención personalizada";
+                respuestaBot = "🙌 ¡Hola! Gracias por comunicarte a *ULMA Packaging México*.\n\n¿Cómo te podemos ayudar? Elige una opción indicando el número:\n\n1️⃣ Venta de maquinaria \n2️⃣ Servicio técnico y repuestos\n3️⃣ Administración y Finanzas \n4️⃣ Atención personalizada";
             }
 
+            // --- ENVÍO DEL MENSAJE ---
             try {
                 await axios({
                     method: "POST",
