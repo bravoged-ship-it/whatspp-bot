@@ -42,23 +42,41 @@ app.post('/webhook', async (req, res) => {
             const tieneTelefono = /\d{8,}/.test(text);
 
             // --- FLUJO DE DECISIÓN ---
-            if (text === "1") {
-                respuestaBot = "🏭 *Ayúdenos a ofrecerle la mejor solución, por favor indíque los datos necesarios:* \n\n¿De qué parte de la república se comunica? \n¿Qué tecnología de envasado es de su interés? \n¿Qué productos desea empacar?";
-            } else if (text === "2") {
-                respuestaBot = "🔩 *Que podemos hacer por usted en Servicio técnico?:* \n\nVenta de repuestos. \nVenta de servicios de mantenimiento. \n\nPara ofrecerle la mejor atención indíque el modelo de su equipo, no. de serie y/o código de repuesto.";
-            } else if (text === "3") {
-                respuestaBot = "🏢 *¿A qué área te gustaría contactar?:* \n\n• Facturación de equipos \n• Facturación de servicios/refacciones \n• Cuentas por cobrar/pagar \n• Recursos Humanos";
-            } else if (text === "4") {
-                respuestaBot = "👤 *Agente Humano:*\nEn un momento un asesor se pondrá en contacto con usted para darle atención personalizada.";
+           // --- LÓGICA DE VALIDACIÓN ---
+            const tieneCorreo = text.includes("@") && text.includes(".");
+            const tieneTelefono = /\d{8,}/.test(text);
+            
+            // Definimos palabras que activan el saludo
+            const saludos = ["hola", "buen", "dia", "tarde", "noche", "menu", "inicio", "empezar"];
+            const esSaludo = saludos.some(s => text.includes(s));
+
+            // --- FLUJO DE DECISIÓN CORREGIDO ---
+            if (esSaludo) {
+                // Si el usuario saluda o pide el menú, siempre mostramos el inicio
+                respuestaBot = "🙌 ¡Hola! Gracias por comunicarte a *ULMA Packaging México*.\n\n¿Cómo te podemos ayudar? Elige una opción indicando el número:\n\n1️⃣ Venta de maquinaria \n2️⃣ Servicio técnico y repuestos\n3️⃣ Administración y Finanzas \n4️⃣ Atención personalizada";
+            } 
+            else if (text === "1") {
+                respuestaBot = "🏭 *Ayúdenos a ofrecerle la mejor solución...*"; // Tu texto completo aquí
+            } 
+            else if (text === "2") {
+                respuestaBot = "🔩 *Que podemos hacer por usted en Servicio técnico?...*"; // Tu texto completo aquí
+            } 
+            else if (text === "3") {
+                respuestaBot = "🏢 *¿A qué área te gustaría contactar?...*"; // Tu texto completo aquí
+            } 
+            else if (text === "4") {
+                respuestaBot = "👤 *Agente Humano:*\nEn un momento un asesor se pondrá en contacto con usted.";
             } 
             else if (tieneCorreo || tieneTelefono) {
                 respuestaBot = "✅ *Datos registrados con éxito.* Hemos recibido su contacto. Un asesor de ULMA Packaging se comunicará con usted a la brevedad. ¡Que tenga un excelente día! 👋";
             }
             else if (text.length > 5) {
+                // Solo llega aquí si NO saludó y NO mandó correo/teléfono
                 respuestaBot = "✅ *Información recibida.* Por favor comparta un **correo electrónico** y **número telefónico** para que un asesor pueda contactarlo formalmente. ¡Gracias!";
             } 
             else {
-                respuestaBot = "🙌 ¡Hola! Gracias por comunicarte a *ULMA Packaging México*.\n\n¿Cómo te podemos ayudar? Elige una opción indicando el número:\n\n1️⃣ Venta de maquinaria \n2️⃣ Servicio técnico y repuestos\n3️⃣ Administración y Finanzas \n4️⃣ Atención personalizada";
+                // Para textos muy cortos que no sean números ni saludos
+                respuestaBot = "🙌 ¡Hola! Gracias por comunicarte a *ULMA Packaging México*. Por favor elige una opción del 1 al 4.";
             }
 
             // --- ENVÍO DEL MENSAJE ---
