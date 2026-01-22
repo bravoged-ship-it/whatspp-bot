@@ -40,11 +40,6 @@ app.post('/webhook', async (req, res) => {
             // --- LÓGICA DE VALIDACIÓN ---
             const tieneCorreo = text.includes("@") && text.includes(".");
             const tieneTelefono = /\d{8,}/.test(text);
-
-            // --- FLUJO DE DECISIÓN ---
-           // --- LÓGICA DE VALIDACIÓN ---
-            const tieneCorreo = text.includes("@") && text.includes(".");
-            const tieneTelefono = /\d{8,}/.test(text);
             
             // Definimos palabras que activan el saludo
             const saludos = ["hola", "buen", "dia", "tarde", "noche", "menu", "inicio", "empezar"];
