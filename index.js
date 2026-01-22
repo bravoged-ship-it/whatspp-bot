@@ -37,13 +37,15 @@ app.post('/webhook', async (req, res) => {
             let respuestaBot = "";
 
             if (text === "1") {
-                respuestaBot = "🛍️ *Nuestros Productos:*\nContamos con calzado deportivo y casual. ¿Deseas ver el catálogo digital?";
+                respuestaBot = "🏭 *Ayúdenos a ofrecerle la mejor solución, por favor indíque los datos necesarios:*\n¿De qué parte de la república se comunica? \n¿Qué tecnología de envasado es de su interés? \n¿Qué productos desea empacar";
             } else if (text === "2") {
-                respuestaBot = "📍 *Ubicación:*\nEstamos en Av. Juárez #123, CDMX. Abrimos de 9:00 AM a 6:00 PM.";
+                respuestaBot = "📍 *Que podemos hacer por usted en Servicio técnico?:*\nVenta de repuestos. \nVenta de servicios de mantenimiento. \nPara ofrecerle la mejor atención comparta el Modelo de la máquina, No. de Serie de su equipo y/o Código de repuesto";
             } else if (text === "3") {
+                respuestaBot = "👤 *¿A qué área te gustaría contactar?:*\nFacturación de equipos \nFacturación de servicios/ refacciones \nCuentas por cobrar, \nCuentas por pagar \nRecursos Humanos";
+            } else if (text === "4") {
                 respuestaBot = "👤 *Agente Humano:*\nEn un momento un asesor se pondrá en contacto contigo.";
             } else {
-                respuestaBot = "🙌 ¡Hola! Bienvenido a nuestra tienda.\n\nPor favor, elige una opción enviando el número:\n1️⃣ Ver Productos\n2️⃣ Horarios y Ubicación\n3️⃣ Hablar con un asesor";
+                respuestaBot = "🙌 ¡Hola! Gracias por comunicarte a ULMA Packaging México, Soluciones en envasado.\n¿Cómo te podemos ayudar?, elige la opción que más se acomode a tus necesidades indicando el número:\n1️⃣ Venta de maquinaria \n2️⃣ Servicio técnico y repuestos\n3️⃣ Administración y Finanzas \n4️⃣ Atención personalizada";
             }
 
             try {
