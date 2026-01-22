@@ -51,13 +51,13 @@ app.post('/webhook', async (req, res) => {
                 respuestaBot = "🙌 ¡Hola! Gracias por comunicarte a *ULMA Packaging México*.\n\n¿Cómo te podemos ayudar? Elige una opción indicando el número:\n\n1️⃣ Venta de maquinaria \n2️⃣ Servicio técnico y repuestos\n3️⃣ Administración y Finanzas \n4️⃣ Atención personalizada";
             } 
             else if (text === "1") {
-                respuestaBot = "🏭 *Ayúdenos a ofrecerle la mejor solución...*"; // Tu texto completo aquí
+                respuestaBot = "🏭 *Ayúdenos a ofrecerle la mejor solución, por favor indíque los datos necesarios:* \n\n¿De qué parte de la república se comunica? \n¿Qué tecnología de envasado es de su interés? \n¿Qué productos desea empacar?"; // Tu texto completo aquí
             } 
             else if (text === "2") {
-                respuestaBot = "🔩 *Que podemos hacer por usted en Servicio técnico?...*"; // Tu texto completo aquí
+                respuestaBot = "🔩 *Que podemos hacer por usted en Servicio técnico?:* \n\nVenta de repuestos. \nVenta de servicios de mantenimiento. \n\nPara ofrecerle la mejor atención indíque el modelo de su equipo, no. de serie y/o código de repuesto."; // Tu texto completo aquí
             } 
             else if (text === "3") {
-                respuestaBot = "🏢 *¿A qué área te gustaría contactar?...*"; // Tu texto completo aquí
+                respuestaBot = "🏢 *¿A qué área te gustaría contactar?:* \n\n• Facturación de equipos \n• Facturación de servicios/refacciones \n• Cuentas por cobrar/pagar \n• Recursos Humanos"; // Tu texto completo aquí
             } 
             else if (text === "4") {
                 respuestaBot = "👤 *Agente Humano:*\nEn un momento un asesor se pondrá en contacto con usted.";
