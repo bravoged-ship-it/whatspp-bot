@@ -80,7 +80,9 @@ def enviar_whatsapp(numero, texto):
         "type": "text",
         "text": {"body": texto}
     }
-    requests.post(url, json=payload, headers=headers)
+    response = requests.post(url, json=payload, headers=headers)
+    # ESTA LÍNEA ES CLAVE: Te dirá en los logs de Render por qué Facebook rechaza el mensaje
+    print(f"Respuesta de Meta: {response.status_code} - {response.text}")
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=int(os.environ.get("PORT", 3000)))
