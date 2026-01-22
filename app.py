@@ -10,7 +10,7 @@ app = Flask(__name__)
 VERIFY_TOKEN = os.getenv("VERIFY_TOKEN", "47d2812e-a3ae-4697-871a-10a5fa363347")
 ACCESS_TOKEN = os.getenv("ACCESS_TOKEN", "EAAKwmTV97XABQiXxsD2o9Q9nF2jvRkqUxxyxMXeZBEN4p3ugK9SNcWZC2iFwp5G2BZCON1MjGKrNJDxfkO7rKeK5LHYB6dEX3yvaOsQzrodwvAZCMLySsdDyXjpsKAOXY8Ba1tQBRTru8DZAYnW6DBQZApdZBIRPaREfpPpPbRkdoc6rBZAe1NYZAwfrTHHp7XcWFnCqncWw9In6Bgy0k5iiSVCAn6ZAIvBA1K8HOS1Y3M8zn7c3XjQtUhVMVFJDPqM6UhnFRn78pAjv520jJoI6HVzx0qSRB1KrDoZBdPz")
 PHONE_NUMBER_ID = "916360421552548"
-DATABASE_URL = os.getenv("dpg-d5panb3vbchc7391rs9g-a") # URL de la base de datos en Render
+DATABASE_URL = os.getenv("postgresql://ulma_db_user:FMIvP5vivRa8MUwjncIpPZPAxEWg88ud@dpg-d5panb3vbchc7391rs9g-a/ulma_db") # URL de la base de datos en Render
 
 # Función para guardar en la base de datos
 def guardar_mensaje(telefono, mensaje):
