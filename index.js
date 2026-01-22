@@ -37,15 +37,19 @@ app.post('/webhook', async (req, res) => {
             let respuestaBot = "";
 
             if (text === "1") {
-                respuestaBot = "🏭 *Ayúdenos a ofrecerle la mejor solución, por favor indíque los datos necesarios:*\n¿De qué parte de la república se comunica? \n¿Qué tecnología de envasado es de su interés? \n¿Qué productos desea empacar";
+                respuestaBot = "🏭 *Ayúdenos a ofrecerle la mejor solución, por favor indíque los datos necesarios:* \n¿De qué parte de la república se comunica? \n¿Qué tecnología de envasado es de su interés? \n¿Qué productos desea empacar";
             } else if (text === "2") {
-                respuestaBot = "📍 *Que podemos hacer por usted en Servicio técnico?:*\nVenta de repuestos. \nVenta de servicios de mantenimiento. \nPara ofrecerle la mejor atención comparta el Modelo de la máquina, No. de Serie de su equipo y/o Código de repuesto";
+                respuestaBot = "🔩 *Que podemos hacer por usted en Servicio técnico?:* \nVenta de repuestos. \nVenta de servicios de mantenimiento. \nPara ofrecerle la mejor atención indíque el modelo de su equipo, no. de serie y/o código de repuesto";
             } else if (text === "3") {
-                respuestaBot = "👤 *¿A qué área te gustaría contactar?:*\nFacturación de equipos \nFacturación de servicios/ refacciones \nCuentas por cobrar, \nCuentas por pagar \nRecursos Humanos";
+                respuestaBot = "🏢 *¿A qué área te gustaría contactar?:* \nFacturación de equipos \nFacturación de servicios/ refacciones \nCuentas por cobrar, \nCuentas por pagar \nRecursos Humanos";
             } else if (text === "4") {
-                respuestaBot = "👤 *Agente Humano:*\nEn un momento un asesor se pondrá en contacto contigo.";
-            } else {
-                respuestaBot = "🙌 ¡Hola! Gracias por comunicarte a ULMA Packaging México, Soluciones en envasado.\n¿Cómo te podemos ayudar?, elige la opción que más se acomode a tus necesidades indicando el número:\n1️⃣ Venta de maquinaria \n2️⃣ Servicio técnico y repuestos\n3️⃣ Administración y Finanzas \n4️⃣ Atención personalizada";
+                respuestaBot = "👤 *Agente Humano:*\nEn un momento un asesor se pondrá en contacto con usted.";
+            }
+            else if (text.length > 5) {
+                respuestaBot = "✅ *Información recibida.* Por favor comparta un correo electrónico y número telefónico y en breve un asesor se pondrá en contacto con usted. ¡Gracias!";
+            }
+            else {
+                respuestaBot = "🙌 ¡Hola! Gracias por comunicarte a ULMA Packaging México, Soluciones en envasado. \n¿Cómo te podemos ayudar?, elige la opción que más se acomode a tus necesidades indicando el número:\n1️⃣ Venta de maquinaria \n2️⃣ Servicio técnico y repuestos\n3️⃣ Administración y Finanzas \n4️⃣ Atención personalizada";
             }
 
             try {
