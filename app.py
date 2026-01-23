@@ -1,7 +1,6 @@
 import os
-import re
 import requests
-import psycopg2 # Librería para la base de datos
+import psycopg2
 from flask import Flask, request
 
 app = Flask(__name__)
@@ -10,14 +9,12 @@ app = Flask(__name__)
 VERIFY_TOKEN = os.getenv("VERIFY_TOKEN")
 ACCESS_TOKEN = os.getenv("ACCESS_TOKEN")
 PHONE_NUMBER_ID = "916360421552548"
-DATABASE_URL = os.getenv("DATABASE_URL") # URL de la base de datos en Render
+DATABASE_URL = os.getenv("DATABASE_URL")
 
-# Función para guardar en la base de datos
 def guardar_mensaje(telefono, mensaje):
     try:
         conn = psycopg2.connect(DATABASE_URL)
         cur = conn.cursor()
-        # Creamos la tabla si no existe
         cur.execute("""
             CREATE TABLE IF NOT EXISTS mensajes (
                 id SERIAL PRIMARY KEY,
@@ -26,7 +23,6 @@ def guardar_mensaje(telefono, mensaje):
                 fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
         """)
-        # Insertamos los datos
         cur.execute("INSERT INTO mensajes (telefono, mensaje) VALUES (%s, %s)", (telefono, mensaje))
         conn.commit()
         cur.close()
@@ -54,17 +50,19 @@ def handle_messages():
             
             if 'messages' in value:
                 msg = value['messages'][0]
-                from_number = msg['from']
+                from_number = msg['from'] # Ejemplo: 5215550679358
                 text = msg.get('text', {}).get('body', "").strip().lower()
 
-                # --- GUARDAR EN BASE DE DATOS ---
+                # --- LÓGICA DE LIMPIEZA PARA MÉXICO (521 -> 52) ---
+                # Si el número empieza con 521 y tiene 13 dígitos, quitamos el '1'
+                if from_number.startswith("521") and len(from_number) == 13:
+                    from_number = "52" + from_number[3:]
+                
+                # Guardar en base de datos el número ya limpio
                 guardar_mensaje(from_number, text)
 
-                # (Aquí sigue el resto de tu lógica de respuestas igual que antes...)
-                # [Lógica de respuesta_bot ...]
-                
-                # Ejemplo simplificado de envío
-                enviar_whatsapp(from_number, "Mensaje recibido y guardado")
+                # Enviar respuesta al número limpio
+                enviar_whatsapp(from_number, "✅ Mensaje recibido y guardado con éxito.")
 
         except Exception as e:
             print(f"Error: {e}")
@@ -81,11 +79,8 @@ def enviar_whatsapp(numero, texto):
         "text": {"body": texto}
     }
     response = requests.post(url, json=payload, headers=headers)
-    # ESTA LÍNEA ES CLAVE: Te dirá en los logs de Render por qué Facebook rechaza el mensaje
     print(f"Respuesta de Meta: {response.status_code} - {response.text}")
 
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=int(os.environ.get("PORT", 3000)))
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 3000))
     app.run(host='0.0.0.0', port=port)
