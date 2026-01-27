@@ -52,7 +52,9 @@ def handle_messages():
             if 'messages' in value:
                 msg = value['messages'][0]
                 from_number = msg['from']
-                text = msg.get('text', {}).get('body', "").strip().lower()
+                # Limpiamos el texto para procesarlo
+                text = msg.get('text', {}).get('body', "").strip()
+                text_lower = text.lower()
 
                 # --- LÓGICA DE LIMPIEZA PARA MÉXICO (521 -> 52) ---
                 if from_number.startswith("521") and len(from_number) == 13:
@@ -63,27 +65,81 @@ def handle_messages():
 
                 # --- LÓGICA DE RESPUESTAS (MENÚ ULMA) ---
                 respuesta_bot = ""
-                tiene_correo = "@" in text and "." in text
-                tiene_telefono = bool(re.search(r'\d{8,}', text))
+                tiene_correo = "@" in text_lower and "." in text_lower
+                tiene_telefono = bool(re.search(r'\d{8,}', text_lower))
                 saludos = ["hola", "buen", "dia", "tarde", "noche", "menu", "inicio", "empezar"]
-                es_saludo = any(s in text for s in saludos)
+                es_saludo = any(s in text_lower for s in saludos)
 
-                if es_saludo:
-                    respuesta_bot = "🙌 ¡Hola! Gracias por comunicarte a *ULMA Packaging México*.\n\n¿Cómo te podemos ayudar? Por favor elija la opción que más se acomode a tus necesidades:\n\n1️⃣ Venta de maquinaria \n2️⃣ Servicio técnico y repuestos\n3️⃣ Administración y Finanzas \n4️⃣ Atención personalizada"
+                menu_principal = (
+                    "🙌 ¡Hola! Gracias por comunicarte a *ULMA Packaging México*.\n\n"
+                    "Elija una opción:\n\n"
+                    "1️⃣ Venta de maquinaria\n"
+                    "2️⃣ Servicio técnico y repuestos\n"
+                    "3️⃣ Administración y Finanzas\n"
+                    "4️⃣ Atención personalizada"
+                )
+
+                # Regresar al menú principal con Saludo o con la letra "A"
+                if es_saludo or text_lower == "a":
+                    respuesta_bot = menu_principal
+
+                # --- SUBMENÚS ---
                 elif text == "1":
-                    respuesta_bot = "🏭 *Ayúdenos a ofrecerle la mejor solución, por favor indíque los datos necesarios:* \n\n¿De qué parte de la república se comunica? \n¿Qué tecnología de envasado es de su interés? \n¿Qué productos desea empacar?"
+                    respuesta_bot = ("🏭 *Venta de Maquinaria*\n"
+                                    "Seleccione una tecnología:\n\n"
+                                    "4️⃣ Flow Pack (HFFS)\n"
+                                    "5️⃣ Termoformado\n"
+                                    "6️⃣ Termosellado\n\n"
+                                    "Indique la letra *A* para regresar al menú principal.")
+
                 elif text == "2":
-                    respuesta_bot = "🔩 *Que podemos hacer por usted en Servicio técnico?:* \n\nVenta de repuestos. \nAgendar servicio. \nPólizas de mantenimiento \n\nPara ofrecerle una mejor atención indíque el modelo de su maquina, no. de serie y/o código de repuesto."
+                    respuesta_bot = ("🔩 *Servicio Técnico y Repuestos*\n"
+                                    "¿Qué necesita?\n\n"
+                                    "7️⃣ Venta de repuestos\n"
+                                    "8️⃣ Agendar servicio / mantenimiento\n"
+                                    "9️⃣ Pólizas de mantenimiento\n\n"
+                                    "Indique la letra *A* para regresar al menú principal.")
+
                 elif text == "3":
-                    respuesta_bot = "🏢 *¿A qué área te gustaría contactar?:* \n\n• Tesorería \n• Facturación \n• Cuentas por cobrar \n• Cuentas por pagar \n• Recursos Humanos"
+                    respuesta_bot = ("🏢 *Administración y Finanzas*\n"
+                                    "Seleccione el área:\n\n"
+                                    "10️⃣ Facturación y Cobranza\n"
+                                    "11️⃣ Recursos Humanos\n"
+                                    "12️⃣ Cuentas por pagar / Proveedores\n\n"
+                                    "Indique la letra *A* para regresar al menú principal.")
+
                 elif text == "4":
                     respuesta_bot = "👤 *Agente Humano:*\nPor favor comparta un **correo electrónico** y **número telefónico** y en un momento un asesor se pondrá en contacto con usted."
+
+                # --- LÓGICA DE RESPUESTAS PARA SUB-OPCIONES (4 al 12) ---
+                elif text in ["4", "5", "6"]:
+                    respuesta_bot = ("🏭 *Información de Maquinaria*\n"
+                                    "Ayúdenos con estos datos:\n"
+                                    "• ¿De qué parte de la república se comunica?\n"
+                                    "• ¿Qué productos desea empacar?\n\n"
+                                    "Indique la letra *A* para regresar.")
+
+                elif text in ["7", "8", "9"]:
+                    respuesta_bot = ("⚙️ *Solicitud de Servicio*\n"
+                                    "Para agilizar su atención, por favor indique:\n"
+                                    "• Modelo de su máquina\n"
+                                    "• No. de serie y/o código de repuesto\n\n"
+                                    "Indique la letra *A* para regresar.")
+
+                elif text in ["10", "11", "12"]:
+                    respuesta_bot = ("💼 *Área Administrativa*\n"
+                                    "Por favor comparta su nombre y el motivo de su contacto para canalizarlo.\n\n"
+                                    "Indique la letra *A* para regresar.")
+
+                # --- VALIDACIONES FINALES ---
                 elif tiene_correo or tiene_telefono:
-                    respuesta_bot = "👍🏻 *Datos registrados con éxito.* Hemos recibido su contacto. Un asesor de ULMA Packaging se comunicará con usted a la brevedad. ¡Que tenga un excelente día! 👋"
+                    respuesta_bot = "👍🏻 *Datos registrados con éxito.* Un asesor de ULMA Packaging se comunicará con usted a la brevedad. ¡Que tenga un excelente día! 👋"
+                
                 elif len(text) > 5:
-                    respuesta_bot = "✅ *Información recibida.* Por favor comparta un **correo electrónico** y **número telefónico** para que un asesor pueda contactarlo formalmente. ¡Gracias!"
+                    respuesta_bot = "✅ *Información recibida.* Por favor comparta un **correo electrónico** y **número telefónico** para que podamos contactarlo formalmente."
+                
                 else:
-                    respuesta_bot = "🙌 ¡Hola! Gracias por comunicarte a *ULMA Packaging México*. Por favor elija la opción que más se acomode a tus necesidades del 1 al 4."
+                    respuesta_bot = "⚠️ Opción no válida. Por favor elija un número de la lista o escriba *A* para volver al menú inicial."
 
                 # --- ENVÍO DEL MENSAJE ---
                 enviar_whatsapp(from_number, respuesta_bot)
