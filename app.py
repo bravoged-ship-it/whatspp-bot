@@ -89,7 +89,7 @@ def handle_messages():
                                     "Seleccione una solución de envasado:\n\n"
                                     "5️⃣ Cárnico 🥩\n"
                                     "6️⃣ Avícola 🍗\n"
-                                    "7️⃣ Queso 🧀\n\n"
+                                    "7️⃣ Queso 🧀\n"
                                     "8️⃣ Hortofrutícola 🍎\n"
                                     "9️⃣ Panadería y Pastelería 🍪\n"
                                     "1️⃣0️⃣ Comida preparada 🍕\n"
