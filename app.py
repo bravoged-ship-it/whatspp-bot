@@ -15,28 +15,23 @@ DATABASE_URL = os.getenv("DATABASE_URL")
 
 # --- CONFIGURACIÓN GEMINI IA ---
 genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
+model = genai.GenerativeModel('gemini-1.5-flash')
 
 def obtener_respuesta_gemini(mensaje_usuario):
-    # Lista de nombres posibles que Google acepta según la versión
-    modelos_a_probar = ['gemini-1.5-flash', 'models/gemini-1.5-flash', 'gemini-1.5-pro']
-    
-    for nombre in modelos_a_probar:
-        try:
-            print(f"Intentando con modelo: {nombre}") # Esto saldrá en tus logs
-            model_test = genai.GenerativeModel(nombre)
-            prompt = (
-                "Eres el asistente de ULMA Packaging México. Responde breve. "
-                f"Usuario dice: {mensaje_usuario}"
-            )
-            response = model_test.generate_content(prompt)
-            if response.text:
-                return response.text
-        except Exception as e:
-            print(f"Fallo con {nombre}: {e}")
-            continue # Si falla, brinca al siguiente nombre
-            
-    return "Lo siento, sigo ajustando mi sistema inteligente. ¿Puedo ayudarte con el menú escribiendo 'A'?"
-
+    try:
+        prompt = (
+            "Eres el asistente virtual de ULMA Packaging México. Responde de forma breve y profesional. "
+            f"Usuario: {mensaje_usuario}"
+        )
+        response = model.generate_content(prompt)
+        
+        if response.text:
+            return response.text
+        else:
+            return "Entiendo tu mensaje. Para darte una mejor atención, ¿podrías contactar a un asesor marcando '4'?"
+    except Exception as e:
+        print(f"Error Gemini: {e}")
+        return "Lo siento, tuve un problema técnico. ¿Podrías escribir 'A' para ver las opciones principales?"
 def guardar_mensaje(telefono, mensaje):
     try:
         conn = psycopg2.connect(DATABASE_URL)
