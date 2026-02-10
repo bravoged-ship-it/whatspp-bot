@@ -23,31 +23,32 @@ model = genai.GenerativeModel(
     generation_config={"candidate_count": 1}
 )
 
+# --- CONFIGURACIÓN GEMINI IA ---
+genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
+
 def obtener_respuesta_gemini(mensaje_usuario):
     try:
-        # CONFIGURACIÓN CRUCIAL: Forzamos la versión v1 de la API
-        # Esto evita que la librería intente usar v1beta que es la que da el error 404
-        client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"), http_options={'api_version': 'v1'})
+        # Usamos la configuración clásica pero forzando el modelo flash
+        # Sin usar la palabra 'Client' para evitar el error de 'Atributo'
+        model = genai.GenerativeModel('gemini-1.5-flash')
         
         prompt = (
             "Eres el asistente virtual de ULMA Packaging México. Responde de forma breve y amable. "
             f"Usuario: {mensaje_usuario}"
         )
         
-        # Usamos el método de generación directa con la versión v1
-        response = client.models.generate_content(
-            model='gemini-1.5-flash',
-            contents=prompt
-        )
+        # Esta es la forma más compatible de llamar a la generación
+        response = model.generate_content(prompt)
         
         if response.text:
             return response.text
         else:
-            return "Por ahora no tengo esa respuesta. ¿Deseas contactar a un asesor? Marca '4'."
+            return "Lo siento, no tengo esa información ahora. Escribe 'A' para el menú."
 
     except Exception as e:
-        # Este log nos dirá si el problema es la versión o algo más (como la API KEY)
-        print(f"ERROR DEFINITIVO: {e}")
+        # Este print nos dirá si el problema es la conexión o la API KEY
+        print(f"DEBUG FINAL: {e}")
+        # Si falla, revisamos si la versión se quedó trabada
         return "Sigo ajustando mi sistema inteligente. ¿Puedo ayudarte con el menú escribiendo 'A'?"
 
 # ... (El resto del código de guardar_mensaje, webhook y main sigue igual) ...
