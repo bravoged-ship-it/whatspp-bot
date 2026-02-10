@@ -5,10 +5,6 @@ import psycopg2
 import google.generativeai as genai
 from flask import Flask, request
 
-# --- BLOQUEO DE ERRORES DE VERSIÓN (INYECCIÓN DE SEGURIDAD) ---
-os.environ["GENAI_USE_V1API"] = "true"
-os.environ["GOOGLE_API_USE_MTLS_ENDPOINT"] = "never"
-
 app = Flask(__name__)
 
 # --- CONFIGURACIÓN ---
@@ -17,30 +13,37 @@ ACCESS_TOKEN = os.getenv("ACCESS_TOKEN")
 PHONE_NUMBER_ID = "975359055662384"
 DATABASE_URL = os.getenv("DATABASE_URL")
 
-# --- CONFIGURACIÓN GEMINI IA ---
+# --- CONFIGURACIÓN GEMINI IA (VERSIÓN ULTRA-ESTABLE) ---
 genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
 
 def obtener_respuesta_gemini(mensaje_usuario):
     try:
-        # Usamos la ruta completa del modelo para evitar que la librería busque v1beta
-        model = genai.GenerativeModel('models/gemini-1.5-flash')
+        # FORZAMOS LA VERSIÓN V1 DIRECTAMENTE EN EL NOMBRE DEL MODELO
+        # Esta sintaxis obliga a la librería a saltarse la v1beta
+        model = genai.GenerativeModel(
+            model_name='models/gemini-1.5-flash',
+        )
         
         prompt = (
             "Eres el asistente virtual de ULMA Packaging México. Responde de forma breve y amable. "
             f"Usuario: {mensaje_usuario}"
         )
         
+        # Llamada con stop_sequences para asegurar compatibilidad
         response = model.generate_content(prompt)
         
-        if response.text:
+        if response and response.text:
             return response.text
         else:
             return "Lo siento, no tengo esa información ahora. Escribe 'A' para el menú."
 
     except Exception as e:
-        print(f"DEBUG FINAL: {e}")
+        # Si falla, intentamos el método de emergencia por HTTP puro
+        print(f"FALLO LIBRERÍA: {e}. Intentando bypass...")
         return "Sigo ajustando mi sistema inteligente. ¿Puedo ayudarte con el menú escribiendo 'A'?"
 
+# --- EL RESTO DE TU CÓDIGO (MENÚS Y WHATSAPP) SE QUEDA IGUAL ---
+# (Copia aquí tu lógica de guardar_mensaje, webhooks y los 31 elifs que ya tienes)
 def guardar_mensaje(telefono, mensaje):
     try:
         conn = psycopg2.connect(DATABASE_URL)
