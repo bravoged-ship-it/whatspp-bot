@@ -9,7 +9,7 @@ app = Flask(__name__)
 # --- CONFIGURACIÓN ---
 VERIFY_TOKEN = os.getenv("VERIFY_TOKEN")
 ACCESS_TOKEN = os.getenv("ACCESS_TOKEN")
-PHONE_NUMBER_ID = "916360421552548"
+PHONE_NUMBER_ID = "975359055662384"
 DATABASE_URL = os.getenv("DATABASE_URL")
 
 def guardar_mensaje(telefono, mensaje):
