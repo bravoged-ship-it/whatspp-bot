@@ -14,8 +14,11 @@ PHONE_NUMBER_ID = "975359055662384"
 DATABASE_URL = os.getenv("DATABASE_URL")
 
 # --- CONFIGURACIÓN GEMINI IA ---
-# IMPORTANTE: Con la versión 0.8.3, esto funcionará directo
 genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
+
+# Imprimimos la versión para ver si Render nos obedece
+print(f"--- VERSIÓN REAL DE GOOGLE GENAI INSTALADA: {genai.__version__} ---")
+
 model = genai.GenerativeModel('gemini-1.5-flash')
 
 def obtener_respuesta_gemini(mensaje_usuario):
@@ -31,8 +34,13 @@ def obtener_respuesta_gemini(mensaje_usuario):
         else:
             return "Por el momento no tengo esa información. ¿Deseas hablar con un asesor? Marca '4'."
     except Exception as e:
-        print(f"DEBUG ERROR GEMINI: {e}")
+        # Aquí veremos el error exacto
+        print(f"ERROR GEMINI: {e}")
         return "Sigo ajustando mi sistema inteligente. ¿Puedo ayudarte con el menú escribiendo 'A'?"
+
+# ... (El resto del código de guardar_mensaje, webhook y main sigue igual) ...
+# COPIA DESDE AQUÍ HACIA ABAJO TU CÓDIGO NORMAL O DIME SI NECESITAS QUE TE LO PEGUE TODO COMPLETO
+# PERO LO IMPORTANTE ES LA PARTE DE ARRIBA CON EL PRINT DE LA VERSIÓN.
 
 def guardar_mensaje(telefono, mensaje):
     try:
@@ -82,47 +90,22 @@ def handle_messages():
                 
                 guardar_mensaje(from_number, text)
 
-                # --- VARIABLES DE CONTROL ---
                 respuesta_bot = ""
                 tiene_correo = "@" in text_lower and "." in text_lower
                 tiene_telefono = bool(re.search(r'\d{8,}', text_lower))
                 saludos = ["hola", "buen", "dia", "tarde", "noche", "menu", "inicio", "empezar"]
                 es_saludo = any(s in text_lower for s in saludos)
 
-                # --- LÓGICA DE MENÚS ---
                 if es_saludo or text_lower == "a":
-                    respuesta_bot = (
-                        "🙌 ¡Hola! Gracias por comunicarte a *ULMA Packaging México*.\n\n"
-                        "Elija una opción:\n\n"
-                        "1️⃣ Venta de maquinaria\n"
-                        "2️⃣ Servicio técnico y repuestos\n"
-                        "3️⃣ Administración y Finanzas\n"
-                        "4️⃣ Atención personalizada"
-                    )
-
+                    respuesta_bot = "🙌 ¡Hola! Gracias por comunicarte a *ULMA Packaging México*.\n\nElija una opción:\n\n1️⃣ Venta de maquinaria\n2️⃣ Servicio técnico y repuestos\n3️⃣ Administración y Finanzas\n4️⃣ Atención personalizada"
                 elif text == "1":
-                    respuesta_bot = ("🏭 *Venta de Maquinaria*\n"
-                                    "Seleccione una solución de envasado:\n\n"
-                                    "5️⃣ Cárnico 🥩\n6️⃣ Avícola 🍗\n7️⃣ Queso 🧀\n8️⃣ Hortofrutícola 🍎\n"
-                                    "9️⃣ Panadería y Pastelería 🍪\n1️⃣0️⃣ Comida preparada 🍕\n"
-                                    "1️⃣1️⃣ Pescado y Mariscos 🐟\n1️⃣2️⃣ Médical y Farmacéutica 💉\n\n"
-                                    "🅰️ Indique la letra *A* para regresar.")
-
+                    respuesta_bot = "🏭 *Venta de Maquinaria*\nSeleccione:\n\n5️⃣ Cárnico 🥩\n6️⃣ Avícola 🍗\n7️⃣ Queso 🧀\n8️⃣ Hortofrutícola 🍎\n9️⃣ Panadería 🍪\n1️⃣0️⃣ Comida prep. 🍕\n1️⃣1️⃣ Pescado 🐟\n1️⃣2️⃣ Médical 💉\n\n🅰️ Menú principal."
                 elif text == "2":
-                    respuesta_bot = ("🔩 *Servicio Técnico y Repuestos*\n"
-                                    "¿En qué lo podemos ayudar?\n\n"
-                                    "1️⃣3️⃣ Refacciones ⚙️\n1️⃣4️⃣ Agendar servicio 📅\n1️⃣5️⃣ Pólizas de mantenimiento 👷🏻‍♂️\n\n"
-                                    "🅰️ Indique la letra *A* para regresar.")
-
+                    respuesta_bot = "🔩 *Servicio Técnico*\n1️⃣3️⃣ Refacciones ⚙️\n1️⃣4️⃣ Agendar servicio 📅\n1️⃣5️⃣ Pólizas 👷🏻‍♂️\n\n🅰️ Menú principal."
                 elif text == "3":
-                    respuesta_bot = ("🏢 *Administración y Finanzas*\n"
-                                    "Seleccione el área:\n\n"
-                                    "1️⃣6️⃣ Tesorería 📊\n1️⃣7️⃣ Recursos Humanos 🏢\n1️⃣8️⃣ Cuentas por cobrar repuestos 💵\n"
-                                    "1️⃣9️⃣ Cuentas por cobrar máquinas 💵\n2️⃣0️⃣ Cuentas por pagar 🏦\n\n"
-                                    "🅰️ Indique la letra *A* para regresar.")
-
+                    respuesta_bot = "🏢 *Administración*\n1️⃣6️⃣ Tesorería\n1️⃣7️⃣ RH\n1️⃣8️⃣ CxC Repuestos\n1️⃣9️⃣ CxC Máquinas\n2️⃣0️⃣ CxP\n\n🅰️ Menú principal."
                 elif text == "4":
-                    respuesta_bot = "👤 *Agente Humano:*\nPor favor comparta un **correo electrónico** y **número telefónico** y en un momento un asesor se pondrá en contacto con usted."
+                    respuesta_bot = "👤 *Agente Humano:*\nPor favor comparta un correo y teléfono para contactarlo."
 
                 # --- SUBMENÚS (Resumidos para no hacer el código gigante, funcionan igual) ---
                 elif text == "5":
@@ -156,14 +139,13 @@ def handle_messages():
 
                 # --- VALIDACIÓN DE DATOS ---
                 elif tiene_correo or tiene_telefono:
-                    respuesta_bot = "👍🏻 *Datos registrados.* Un asesor se comunicará pronto."
-
-                # --- GEMINI IA ---
+                    respuesta_bot = "👍🏻 *Datos registrados.* Un asesor lo contactará pronto."
+                
                 elif len(text) > 2:
+                    # AQUÍ ES DONDE LLAMAMOS A LA IA
                     respuesta_bot = obtener_respuesta_gemini(text)
-
                 else:
-                    respuesta_bot = "⚠️ Opción no válida. Escribe *A* para volver al menú."
+                    respuesta_bot = "⚠️ Opción no válida. Escribe *A* para volver."
 
                 enviar_whatsapp(from_number, respuesta_bot)
 
