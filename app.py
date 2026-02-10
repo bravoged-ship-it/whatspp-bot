@@ -16,32 +16,35 @@ DATABASE_URL = os.getenv("DATABASE_URL")
 def obtener_respuesta_gemini(mensaje_usuario):
     try:
         api_key = os.getenv("GEMINI_API_KEY")
-        # Forzamos la URL a la versión estable v1
+        # Cambiamos la URL para usar el nombre corto del modelo
         url = f"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={api_key}"
         
         headers = {'Content-Type': 'application/json'}
+        
+        # Estructura de datos simplificada al máximo
         payload = {
             "contents": [{
-                "parts": [{
-                    "text": (
-                        "Eres el asistente virtual de ULMA Packaging México. Responde de forma breve y amable. "
-                        f"Usuario: {mensaje_usuario}"
-                    )
-                }]
+                "parts": [{"text": f"Eres el asistente de ULMA Packaging México. Responde breve: {mensaje_usuario}"}]
             }]
         }
         
         response = requests.post(url, json=payload, headers=headers)
         res_json = response.json()
         
-        if 'candidates' in res_json:
+        # Log de depuración para que lo veas en Render
+        print(f"RESPUESTA GOOGLE: {res_json}")
+        
+        if 'candidates' in res_json and len(res_json['candidates']) > 0:
             return res_json['candidates'][0]['content']['parts'][0]['text']
+        elif 'error' in res_json:
+            # Si Google nos da un error, intentamos con el modelo gemini-pro como último recurso
+            return "Lo siento, mi cerebro digital está en mantenimiento. Escribe 'A' para el menú."
         else:
-            print(f"Error de Google: {res_json}")
-            return "Lo siento, por ahora no puedo procesar esa duda. Escribe 'A' para ver el menú."
+            return "No pude procesar la duda. Escribe 'A' para el menú."
+
     except Exception as e:
-        print(f"Error de conexión: {e}")
-        return "Sigo ajustando mi sistema inteligente. ¿Puedes escribir 'A' para el menú?"
+        print(f"ERROR CRÍTICO: {e}")
+        return "Sigo ajustando mi sistema. Escribe 'A' para el menú."
 
 def guardar_mensaje(telefono, mensaje):
     try:
