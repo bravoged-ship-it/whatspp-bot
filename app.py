@@ -2,8 +2,8 @@ import os
 import re
 import requests
 import psycopg2
-import google.generativeai as genai
-from flask import Flask, request
+# Ya no necesitas importar genai, pero si lo dejas no pasa nada.
+# import google.generativeai as genai 
 
 app = Flask(__name__)
 
@@ -13,34 +13,37 @@ ACCESS_TOKEN = os.getenv("ACCESS_TOKEN")
 PHONE_NUMBER_ID = "975359055662384"
 DATABASE_URL = os.getenv("DATABASE_URL")
 
-# --- CONFIGURACIÓN GEMINI IA (VERSIÓN ULTRA-ESTABLE) ---
-genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
-
+# --- LA NUEVA FUNCIÓN (SIN GENAI.CONFIGURE) ---
 def obtener_respuesta_gemini(mensaje_usuario):
     try:
-        # FORZAMOS LA VERSIÓN V1 DIRECTAMENTE EN EL NOMBRE DEL MODELO
-        # Esta sintaxis obliga a la librería a saltarse la v1beta
-        model = genai.GenerativeModel(
-            model_name='models/gemini-1.5-flash',
-        )
+        api_key = os.getenv("GEMINI_API_KEY")
+        # Esta URL es la llave maestra, apunta directo a la versión estable v1
+        url = f"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={api_key}"
         
-        prompt = (
-            "Eres el asistente virtual de ULMA Packaging México. Responde de forma breve y amable. "
-            f"Usuario: {mensaje_usuario}"
-        )
+        headers = {'Content-Type': 'application/json'}
         
-        # Llamada con stop_sequences para asegurar compatibilidad
-        response = model.generate_content(prompt)
+        payload = {
+            "contents": [{
+                "parts": [{
+                    "text": (
+                        "Eres el asistente virtual de ULMA Packaging México. Responde de forma breve y amable. "
+                        f"Usuario: {mensaje_usuario}"
+                    )
+                }]
+            }]
+        }
         
-        if response and response.text:
-            return response.text
+        response = requests.post(url, json=payload, headers=headers)
+        res_json = response.json()
+        
+        if 'candidates' in res_json:
+            return res_json['candidates'][0]['content']['parts'][0]['text']
         else:
-            return "Lo siento, no tengo esa información ahora. Escribe 'A' para el menú."
-
+            print(f"Error de Google: {res_json}")
+            return "Lo siento, por ahora no puedo procesar eso. Escribe 'A' para el menú."
     except Exception as e:
-        # Si falla, intentamos el método de emergencia por HTTP puro
-        print(f"FALLO LIBRERÍA: {e}. Intentando bypass...")
-        return "Sigo ajustando mi sistema inteligente. ¿Puedo ayudarte con el menú escribiendo 'A'?"
+        print(f"Error de conexión: {e}")
+        return "Sigo ajustando mi sistema. ¿Escribe 'A' para el menú?"
 
 # --- EL RESTO DE TU CÓDIGO (MENÚS Y WHATSAPP) SE QUEDA IGUAL ---
 # (Copia aquí tu lógica de guardar_mensaje, webhooks y los 31 elifs que ya tienes)
