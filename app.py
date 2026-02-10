@@ -5,6 +5,10 @@ import psycopg2
 import google.generativeai as genai
 from flask import Flask, request
 
+# --- BLOQUEO DE ERRORES DE VERSIÓN (INYECCIÓN DE SEGURIDAD) ---
+os.environ["GENAI_USE_V1API"] = "true"
+os.environ["GOOGLE_API_USE_MTLS_ENDPOINT"] = "never"
+
 app = Flask(__name__)
 
 # --- CONFIGURACIÓN ---
@@ -14,30 +18,18 @@ PHONE_NUMBER_ID = "975359055662384"
 DATABASE_URL = os.getenv("DATABASE_URL")
 
 # --- CONFIGURACIÓN GEMINI IA ---
-# --- CONFIGURACIÓN GEMINI IA ---
-genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
-
-# Forzamos al modelo a usar la versión 'v1' explícitamente para evitar el error 404
-model = genai.GenerativeModel(
-    model_name='gemini-1.5-flash',
-    generation_config={"candidate_count": 1}
-)
-
-# --- CONFIGURACIÓN GEMINI IA ---
 genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
 
 def obtener_respuesta_gemini(mensaje_usuario):
     try:
-        # Usamos la configuración clásica pero forzando el modelo flash
-        # Sin usar la palabra 'Client' para evitar el error de 'Atributo'
-        model = genai.GenerativeModel('gemini-1.5-flash')
+        # Usamos la ruta completa del modelo para evitar que la librería busque v1beta
+        model = genai.GenerativeModel('models/gemini-1.5-flash')
         
         prompt = (
             "Eres el asistente virtual de ULMA Packaging México. Responde de forma breve y amable. "
             f"Usuario: {mensaje_usuario}"
         )
         
-        # Esta es la forma más compatible de llamar a la generación
         response = model.generate_content(prompt)
         
         if response.text:
@@ -46,14 +38,8 @@ def obtener_respuesta_gemini(mensaje_usuario):
             return "Lo siento, no tengo esa información ahora. Escribe 'A' para el menú."
 
     except Exception as e:
-        # Este print nos dirá si el problema es la conexión o la API KEY
         print(f"DEBUG FINAL: {e}")
-        # Si falla, revisamos si la versión se quedó trabada
         return "Sigo ajustando mi sistema inteligente. ¿Puedo ayudarte con el menú escribiendo 'A'?"
-
-# ... (El resto del código de guardar_mensaje, webhook y main sigue igual) ...
-# COPIA DESDE AQUÍ HACIA ABAJO TU CÓDIGO NORMAL O DIME SI NECESITAS QUE TE LO PEGUE TODO COMPLETO
-# PERO LO IMPORTANTE ES LA PARTE DE ARRIBA CON EL PRINT DE LA VERSIÓN.
 
 def guardar_mensaje(telefono, mensaje):
     try:
@@ -120,7 +106,6 @@ def handle_messages():
                 elif text == "4":
                     respuesta_bot = "👤 *Agente Humano:*\nPor favor comparta un correo y teléfono para contactarlo."
 
-                # --- SUBMENÚS (Resumidos para no hacer el código gigante, funcionan igual) ---
                 elif text == "5":
                     respuesta_bot = "🥩 *Cárnico*\nContacte a Edith Camacho: maria.edith@ulmapackaging.com.mx | Mob:5587602480\n🅰️ Regresar con *A*."
                 elif text == "6":
@@ -147,15 +132,13 @@ def handle_messages():
 
                 elif text in ["16", "17", "18", "19", "20"]:
                     respuesta_bot = "💼 *Área Administrativa*\nComparta su nombre y motivo de contacto.\n🅰️ Regresar con *A*."
-                elif text in [str(i) for i in range(21, 32)]: # Del 21 al 31
+                elif text in [str(i) for i in range(21, 32)]:
                     respuesta_bot = "📋 *Servicio Técnico*\nIndique Modelo, Serie o Código de repuesto.\n🅰️ Regresar con *A*."
 
-                # --- VALIDACIÓN DE DATOS ---
                 elif tiene_correo or tiene_telefono:
                     respuesta_bot = "👍🏻 *Datos registrados.* Un asesor lo contactará pronto."
                 
                 elif len(text) > 2:
-                    # AQUÍ ES DONDE LLAMAMOS A LA IA
                     respuesta_bot = obtener_respuesta_gemini(text)
                 else:
                     respuesta_bot = "⚠️ Opción no válida. Escribe *A* para volver."
@@ -182,5 +165,4 @@ def enviar_whatsapp(numero, texto):
         print(f"Error enviando mensaje: {e}")
 
 if __name__ == '__main__':
-    port = int(os.environ.get("PORT", 3000))
-    app.run(host='0.0.0.0', port=port)
+    app.run(host='0.0.0.0', port=int(os.environ.get("PORT", 5000)))
