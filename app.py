@@ -20,7 +20,7 @@ model = genai.GenerativeModel('gemini-1.5-flash')
 def obtener_respuesta_gemini(mensaje_usuario):
     try:
         prompt = (
-            "Eres el asistente virtual de ULMA Packaging México. Responde de forma breve y profesional. "
+            "Eres el asistente virtual de ULMA Packaging México. Responde de forma breve. "
             f"Usuario: {mensaje_usuario}"
         )
         response = model.generate_content(prompt)
@@ -28,10 +28,11 @@ def obtener_respuesta_gemini(mensaje_usuario):
         if response.text:
             return response.text
         else:
-            return "Entiendo tu mensaje. Para darte una mejor atención, ¿podrías contactar a un asesor marcando '4'?"
+            return "Por el momento no tengo esa información. ¿Deseas hablar con un asesor? Marca '4'."
     except Exception as e:
-        print(f"Error Gemini: {e}")
-        return "Lo siento, tuve un problema técnico. ¿Podrías escribir 'A' para ver las opciones principales?"
+        # Esto nos dirá en el log si el error cambió o si ya se solucionó
+        print(f"DEBUG FINAL: {e}")
+        return "Sigo ajustando mi sistema inteligente. ¿Puedo ayudarte con el menú escribiendo 'A'?"
 def guardar_mensaje(telefono, mensaje):
     try:
         conn = psycopg2.connect(DATABASE_URL)
