@@ -2,8 +2,7 @@ import os
 import re
 import requests
 import psycopg2
-# Ya no necesitas importar genai, pero si lo dejas no pasa nada.
-# import google.generativeai as genai 
+from flask import Flask, request
 
 app = Flask(__name__)
 
@@ -13,15 +12,14 @@ ACCESS_TOKEN = os.getenv("ACCESS_TOKEN")
 PHONE_NUMBER_ID = "975359055662384"
 DATABASE_URL = os.getenv("DATABASE_URL")
 
-# --- LA NUEVA FUNCIÓN (SIN GENAI.CONFIGURE) ---
+# --- FUNCIÓN GEMINI VIA API DIRECTA (BYPASS DE LIBRERÍA) ---
 def obtener_respuesta_gemini(mensaje_usuario):
     try:
         api_key = os.getenv("GEMINI_API_KEY")
-        # Esta URL es la llave maestra, apunta directo a la versión estable v1
+        # Forzamos la URL a la versión estable v1
         url = f"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={api_key}"
         
         headers = {'Content-Type': 'application/json'}
-        
         payload = {
             "contents": [{
                 "parts": [{
@@ -40,13 +38,11 @@ def obtener_respuesta_gemini(mensaje_usuario):
             return res_json['candidates'][0]['content']['parts'][0]['text']
         else:
             print(f"Error de Google: {res_json}")
-            return "Lo siento, por ahora no puedo procesar eso. Escribe 'A' para el menú."
+            return "Lo siento, por ahora no puedo procesar esa duda. Escribe 'A' para ver el menú."
     except Exception as e:
         print(f"Error de conexión: {e}")
-        return "Sigo ajustando mi sistema. ¿Escribe 'A' para el menú?"
+        return "Sigo ajustando mi sistema inteligente. ¿Puedes escribir 'A' para el menú?"
 
-# --- EL RESTO DE TU CÓDIGO (MENÚS Y WHATSAPP) SE QUEDA IGUAL ---
-# (Copia aquí tu lógica de guardar_mensaje, webhooks y los 31 elifs que ya tienes)
 def guardar_mensaje(telefono, mensaje):
     try:
         conn = psycopg2.connect(DATABASE_URL)
@@ -101,6 +97,7 @@ def handle_messages():
                 saludos = ["hola", "buen", "dia", "tarde", "noche", "menu", "inicio", "empezar"]
                 es_saludo = any(s in text_lower for s in saludos)
 
+                # --- LÓGICA DE MENÚS Y SUBMENÚS ---
                 if es_saludo or text_lower == "a":
                     respuesta_bot = "🙌 ¡Hola! Gracias por comunicarte a *ULMA Packaging México*.\n\nElija una opción:\n\n1️⃣ Venta de maquinaria\n2️⃣ Servicio técnico y repuestos\n3️⃣ Administración y Finanzas\n4️⃣ Atención personalizada"
                 elif text == "1":
@@ -112,6 +109,7 @@ def handle_messages():
                 elif text == "4":
                     respuesta_bot = "👤 *Agente Humano:*\nPor favor comparta un correo y teléfono para contactarlo."
 
+                # --- SUBMENÚS SECTORES ---
                 elif text == "5":
                     respuesta_bot = "🥩 *Cárnico*\nContacte a Edith Camacho: maria.edith@ulmapackaging.com.mx | Mob:5587602480\n🅰️ Regresar con *A*."
                 elif text == "6":
@@ -129,6 +127,7 @@ def handle_messages():
                 elif text == "12":
                     respuesta_bot = "💉 *Médical*\nContacte a Diego Beato: diego.beato@ulmapackaging.com.mx | Mob:5587602480\n🅰️ Regresar con *A*."
                 
+                # --- SUBMENÚS TÉCNICOS ---
                 elif text == "13":
                     respuesta_bot = "⚙️ *Refacciones*\n2️⃣1️⃣ Cotización\n2️⃣2️⃣ Estatus Cotización\n2️⃣3️⃣ Recepción OC\n2️⃣4️⃣ Estatus OC\n🅰️ Regresar con *A*."
                 elif text == "14":
@@ -136,18 +135,22 @@ def handle_messages():
                 elif text == "15":
                     respuesta_bot = "🛠️ *Pólizas*\n2️⃣9️⃣ Cotización\n3️⃣0️⃣ Renovación\n3️⃣1️⃣ Informes\n🅰️ Regresar con *A*."
 
+                # --- ADMINISTRACIÓN ---
                 elif text in ["16", "17", "18", "19", "20"]:
                     respuesta_bot = "💼 *Área Administrativa*\nComparta su nombre y motivo de contacto.\n🅰️ Regresar con *A*."
+                
+                # --- OPCIONES 21 A 31 ---
                 elif text in [str(i) for i in range(21, 32)]:
-                    respuesta_bot = "📋 *Servicio Técnico*\nIndique Modelo, Serie o Código de repuesto.\n🅰️ Regresar con *A*."
+                    respuesta_bot = "📋 *Servicio Técnico*\nIndique Modelo, Serie o Código de repuesto para agilizar su solicitud.\n🅰️ Regresar con *A*."
 
                 elif tiene_correo or tiene_telefono:
-                    respuesta_bot = "👍🏻 *Datos registrados.* Un asesor lo contactará pronto."
+                    respuesta_bot = "👍🏻 *Datos registrados.* Un asesor de ULMA lo contactará pronto."
                 
                 elif len(text) > 2:
+                    # IA POR HTTP DIRECTO
                     respuesta_bot = obtener_respuesta_gemini(text)
                 else:
-                    respuesta_bot = "⚠️ Opción no válida. Escribe *A* para volver."
+                    respuesta_bot = "⚠️ Opción no válida. Escribe *A* para volver al menú principal."
 
                 enviar_whatsapp(from_number, respuesta_bot)
 
@@ -158,7 +161,7 @@ def handle_messages():
 
 def enviar_whatsapp(numero, texto):
     url = f"https://graph.facebook.com/v21.0/{PHONE_NUMBER_ID}/messages"
-    headers = {"Authorization": f"Bearer {ACCESS_TOKEN}"}
+    headers = {"Authorization": f"Bearer {ACCESS_TOKEN}", "Content-Type": "application/json"}
     payload = {
         "messaging_product": "whatsapp",
         "to": numero,
