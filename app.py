@@ -15,20 +15,24 @@ DATABASE_URL = os.getenv("DATABASE_URL")
 
 # --- CONFIGURACIÓN GEMINI IA ---
 genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
-model = genai.GenerativeModel('gemini-1.5-flash')
+model = genai.GenerativeModel(model_name="models/gemini-1.5-flash")
 
 def obtener_respuesta_gemini(mensaje_usuario):
-    """Lógica para que Gemini responda cuando no se usa el menú numérico"""
     try:
-        prompt_contexto = (
-            "Eres el asistente virtual de ULMA Packaging México. Responde de forma breve, amable y profesional. "
-            "Si el usuario tiene dudas sobre maquinaria o servicio técnico, dile que puede ver nuestro menú principal escribiendo 'A'.\n\n"
+        # Usamos un try-except interno para capturar el error exacto
+        prompt = (
+            "Eres el asistente de ULMA Packaging México. Responde de forma breve y profesional. "
             f"Usuario: {mensaje_usuario}"
         )
-        response = model.generate_content(prompt_contexto)
-        return response.text
+        response = model.generate_content(prompt)
+        
+        # Verificamos si la respuesta tiene texto
+        if response.text:
+            return response.text
+        else:
+            return "Entiendo tu mensaje. Para darte una mejor atención sobre ese tema, ¿podrías contactar a un asesor marcando '4'?"
     except Exception as e:
-        print(f"Error Gemini: {e}")
+        print(f"Error detallado Gemini: {e}")
         return "Lo siento, tuve un problema técnico. ¿Podrías escribir 'A' para ver las opciones principales?"
 
 def guardar_mensaje(telefono, mensaje):
