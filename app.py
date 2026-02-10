@@ -14,28 +14,36 @@ PHONE_NUMBER_ID = "975359055662384"
 DATABASE_URL = os.getenv("DATABASE_URL")
 
 # --- CONFIGURACIÓN GEMINI IA ---
+# --- CONFIGURACIÓN GEMINI IA ---
 genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
 
-# Imprimimos la versión para ver si Render nos obedece
-print(f"--- VERSIÓN REAL DE GOOGLE GENAI INSTALADA: {genai.__version__} ---")
-
-model = genai.GenerativeModel('gemini-1.5-flash')
+# Forzamos al modelo a usar la versión 'v1' explícitamente para evitar el error 404
+model = genai.GenerativeModel(
+    model_name='gemini-1.5-flash',
+    generation_config={"candidate_count": 1}
+)
 
 def obtener_respuesta_gemini(mensaje_usuario):
     try:
+        # Usamos un chat_session para que la conexión sea más estable
+        chat_session = model.start_chat(history=[])
+        
         prompt = (
             "Eres el asistente virtual de ULMA Packaging México. Responde de forma breve y amable. "
             f"Usuario: {mensaje_usuario}"
         )
-        response = model.generate_content(prompt)
+        
+        # Enviamos el mensaje a través de la sesión de chat
+        response = chat_session.send_message(prompt)
         
         if response.text:
             return response.text
         else:
-            return "Por el momento no tengo esa información. ¿Deseas hablar con un asesor? Marca '4'."
+            return "Lo siento, no pude procesar tu solicitud. ¿Escribe 'A' para el menú?"
+            
     except Exception as e:
-        # Aquí veremos el error exacto
-        print(f"ERROR GEMINI: {e}")
+        # Esto imprimirá el error real en Render para que lo veamos
+        print(f"ERROR DETALLADO DE GEMINI: {e}")
         return "Sigo ajustando mi sistema inteligente. ¿Puedo ayudarte con el menú escribiendo 'A'?"
 
 # ... (El resto del código de guardar_mensaje, webhook y main sigue igual) ...
