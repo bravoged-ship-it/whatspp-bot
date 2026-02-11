@@ -12,39 +12,37 @@ ACCESS_TOKEN = os.getenv("ACCESS_TOKEN")
 PHONE_NUMBER_ID = "975359055662384"
 DATABASE_URL = os.getenv("DATABASE_URL")
 
-# --- FUNCIÓN GEMINI VIA API DIRECTA (BYPASS DE LIBRERÍA) ---
 def obtener_respuesta_gemini(mensaje_usuario):
-    try:
-        api_key = os.getenv("GEMINI_API_KEY")
-        # Cambiamos la URL para usar el nombre corto del modelo
-        url = f"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={api_key}"
-        
-        headers = {'Content-Type': 'application/json'}
-        
-        # Estructura de datos simplificada al máximo
-        payload = {
-            "contents": [{
-                "parts": [{"text": f"Eres el asistente de ULMA Packaging México. Responde breve: {mensaje_usuario}"}]
-            }]
-        }
-        
-        response = requests.post(url, json=payload, headers=headers)
-        res_json = response.json()
-        
-        # Log de depuración para que lo veas en Render
-        print(f"RESPUESTA GOOGLE: {res_json}")
-        
-        if 'candidates' in res_json and len(res_json['candidates']) > 0:
-            return res_json['candidates'][0]['content']['parts'][0]['text']
-        elif 'error' in res_json:
-            # Si Google nos da un error, intentamos con el modelo gemini-pro como último recurso
-            return "Lo siento, mi cerebro digital está en mantenimiento. Escribe 'A' para el menú."
-        else:
-            return "No pude procesar la duda. Escribe 'A' para el menú."
+    api_key = os.getenv("GEMINI_API_KEY")
+    # Intentaremos primero con v1beta que es donde Google suele esconder a Flash
+    opciones_url = [
+        f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={api_key}",
+        f"https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent?key={api_key}"
+    ]
+    
+    headers = {'Content-Type': 'application/json'}
+    payload = {
+        "contents": [{
+            "parts": [{"text": f"Eres el asistente de ULMA Packaging México. Responde breve y amable en español: {mensaje_usuario}"}]
+        }]
+    }
 
-    except Exception as e:
-        print(f"ERROR CRÍTICO: {e}")
-        return "Sigo ajustando mi sistema. Escribe 'A' para el menú."
+    for url in opciones_url:
+        try:
+            print(f"Probando conexión con: {url}")
+            response = requests.post(url, json=payload, headers=headers)
+            res_json = response.json()
+            
+            if 'candidates' in res_json and len(res_json['candidates']) > 0:
+                return res_json['candidates'][0]['content']['parts'][0]['text']
+            else:
+                print(f"Fallo en esta URL, intentando la siguiente... Error: {res_json}")
+                continue
+        except Exception as e:
+            print(f"Error en intento: {e}")
+            continue
+            
+    return "Lo siento, por ahora no puedo procesar esa duda. Escribe 'A' para ver el menú."
 
 def guardar_mensaje(telefono, mensaje):
     try:
@@ -95,12 +93,11 @@ def handle_messages():
                 guardar_mensaje(from_number, text)
 
                 respuesta_bot = ""
-                tiene_correo = "@" in text_lower and "." in text_lower
-                tiene_telefono = bool(re.search(r'\d{8,}', text_lower))
                 saludos = ["hola", "buen", "dia", "tarde", "noche", "menu", "inicio", "empezar"]
                 es_saludo = any(s in text_lower for s in saludos)
+                tiene_datos = ("@" in text_lower and "." in text_lower) or bool(re.search(r'\d{8,}', text_lower))
 
-                # --- LÓGICA DE MENÚS Y SUBMENÚS ---
+                # --- MENÚS ---
                 if es_saludo or text_lower == "a":
                     respuesta_bot = "🙌 ¡Hola! Gracias por comunicarte a *ULMA Packaging México*.\n\nElija una opción:\n\n1️⃣ Venta de maquinaria\n2️⃣ Servicio técnico y repuestos\n3️⃣ Administración y Finanzas\n4️⃣ Atención personalizada"
                 elif text == "1":
@@ -111,49 +108,38 @@ def handle_messages():
                     respuesta_bot = "🏢 *Administración*\n1️⃣6️⃣ Tesorería\n1️⃣7️⃣ RH\n1️⃣8️⃣ CxC Repuestos\n1️⃣9️⃣ CxC Máquinas\n2️⃣0️⃣ CxP\n\n🅰️ Menú principal."
                 elif text == "4":
                     respuesta_bot = "👤 *Agente Humano:*\nPor favor comparta un correo y teléfono para contactarlo."
-
-                # --- SUBMENÚS SECTORES ---
                 elif text == "5":
-                    respuesta_bot = "🥩 *Cárnico*\nContacte a Edith Camacho: maria.edith@ulmapackaging.com.mx | Mob:5587602480\n🅰️ Regresar con *A*."
+                    respuesta_bot = "🥩 *Cárnico*\nEdith Camacho: maria.edith@ulmapackaging.com.mx | Mob:5587602480\n🅰️ Volver con *A*."
                 elif text == "6":
-                    respuesta_bot = "🍗 *Avícola*\nContacte a Andres Jacome: joseandres.jacome@ulmapackaging.com.mx | Mob:5587423015\n🅰️ Regresar con *A*."
+                    respuesta_bot = "🍗 *Avícola*\nAndres Jacome: joseandres.jacome@ulmapackaging.com.mx | Mob:5587423015\n🅰️ Volver con *A*."
                 elif text == "7":
-                    respuesta_bot = "🧀 *Queso*\nContacte a Edgar Martínez: edgar.martinez@ulmapackaging.com.mx | Mob:5574239851\n🅰️ Regresar con *A*."
+                    respuesta_bot = "🧀 *Queso*\nEdgar Martínez: edgar.martinez@ulmapackaging.com.mx | Mob:5574239851\n🅰️ Volver con *A*."
                 elif text == "8":
-                    respuesta_bot = "🍎 *Hortofrutícola*\nContacte a Jorge Fernández: jorge.fernandez@ulmapackaging.com.mx | Mob:5524698043\n🅰️ Regresar con *A*."
+                    respuesta_bot = "🍎 *Hortofrutícola*\nJorge Fernández: jorge.fernandez@ulmapackaging.com.mx | Mob:5524698043\n🅰️ Volver con *A*."
                 elif text == "9":
-                    respuesta_bot = "🍪 *Panadería*\nContacte a Roberto Sánchez: jrsanchez@ulmapackaging.com.mx | Mob:5547804369\n🅰️ Regresar con *A*."
+                    respuesta_bot = "🍪 *Panadería*\nRoberto Sánchez: jrsanchez@ulmapackaging.com.mx | Mob:5547804369\n🅰️ Volver con *A*."
                 elif text == "10":
-                    respuesta_bot = "🍕 *Comida Prep.*\nContacte a Daniel Muñoz: daniel.muñoz@ulmapackaging.com.mx | Mob:5578946247\n🅰️ Regresar con *A*."
+                    respuesta_bot = "🍕 *Comida Prep.*\nDaniel Muñoz: daniel.muñoz@ulmapackaging.com.mx | Mob:5578946247\n🅰️ Volver con *A*."
                 elif text == "11":
-                    respuesta_bot = "🐟 *Pescado*\nContacte a Jesus Delgado: jesus.emmanuel@ulmapackaging.com.mx | Mob:5571648907\n🅰️ Regresar con *A*."
+                    respuesta_bot = "🐟 *Pescado*\nJesus Delgado: jesus.emmanuel@ulmapackaging.com.mx | Mob:5571648907\n🅰️ Volver con *A*."
                 elif text == "12":
-                    respuesta_bot = "💉 *Médical*\nContacte a Diego Beato: diego.beato@ulmapackaging.com.mx | Mob:5587602480\n🅰️ Regresar con *A*."
-                
-                # --- SUBMENÚS TÉCNICOS ---
+                    respuesta_bot = "💉 *Médical*\nDiego Beato: diego.beato@ulmapackaging.com.mx | Mob:5587602480\n🅰️ Volver con *A*."
                 elif text == "13":
-                    respuesta_bot = "⚙️ *Refacciones*\n2️⃣1️⃣ Cotización\n2️⃣2️⃣ Estatus Cotización\n2️⃣3️⃣ Recepción OC\n2️⃣4️⃣ Estatus OC\n🅰️ Regresar con *A*."
+                    respuesta_bot = "⚙️ *Refacciones*\n2️⃣1️⃣ Cotización\n2️⃣2️⃣ Estatus Cotización\n2️⃣3️⃣ Recepción OC\n2️⃣4️⃣ Estatus OC\n🅰️ Volver con *A*."
                 elif text == "14":
-                    respuesta_bot = "👷🏻‍♂️ *Servicio*\n2️⃣5️⃣ Solicitar fecha\n2️⃣6️⃣ Reagendar\n2️⃣7️⃣ Asesoría telefónica\n2️⃣8️⃣ Capacitación\n🅰️ Regresar con *A*."
+                    respuesta_bot = "👷🏻‍♂️ *Servicio*\n2️⃣5️⃣ Solicitar fecha\n2️⃣6️⃣ Reagendar\n2️⃣7️⃣ Asesoría telefónica\n2️⃣8️⃣ Capacitación\n🅰️ Volver con *A*."
                 elif text == "15":
-                    respuesta_bot = "🛠️ *Pólizas*\n2️⃣9️⃣ Cotización\n3️⃣0️⃣ Renovación\n3️⃣1️⃣ Informes\n🅰️ Regresar con *A*."
-
-                # --- ADMINISTRACIÓN ---
+                    respuesta_bot = "🛠️ *Pólizas*\n2️⃣9️⃣ Cotización\n3️⃣0️⃣ Renovación\n3️⃣1️⃣ Informes\n🅰️ Volver con *A*."
                 elif text in ["16", "17", "18", "19", "20"]:
-                    respuesta_bot = "💼 *Área Administrativa*\nComparta su nombre y motivo de contacto.\n🅰️ Regresar con *A*."
-                
-                # --- OPCIONES 21 A 31 ---
+                    respuesta_bot = "💼 *Administración*\nComparta su nombre y motivo. 🅰️ Volver con *A*."
                 elif text in [str(i) for i in range(21, 32)]:
-                    respuesta_bot = "📋 *Servicio Técnico*\nIndique Modelo, Serie o Código de repuesto para agilizar su solicitud.\n🅰️ Regresar con *A*."
-
-                elif tiene_correo or tiene_telefono:
-                    respuesta_bot = "👍🏻 *Datos registrados.* Un asesor de ULMA lo contactará pronto."
-                
+                    respuesta_bot = "📋 *Servicio Técnico*\nIndique Modelo y Serie de su máquina. 🅰️ Volver con *A*."
+                elif tiene_datos:
+                    respuesta_bot = "👍🏻 *Datos registrados.* Un asesor lo contactará pronto."
                 elif len(text) > 2:
-                    # IA POR HTTP DIRECTO
                     respuesta_bot = obtener_respuesta_gemini(text)
                 else:
-                    respuesta_bot = "⚠️ Opción no válida. Escribe *A* para volver al menú principal."
+                    respuesta_bot = "⚠️ Escribe *A* para ver el menú."
 
                 enviar_whatsapp(from_number, respuesta_bot)
 
@@ -165,16 +151,8 @@ def handle_messages():
 def enviar_whatsapp(numero, texto):
     url = f"https://graph.facebook.com/v21.0/{PHONE_NUMBER_ID}/messages"
     headers = {"Authorization": f"Bearer {ACCESS_TOKEN}", "Content-Type": "application/json"}
-    payload = {
-        "messaging_product": "whatsapp",
-        "to": numero,
-        "type": "text",
-        "text": {"body": texto}
-    }
-    try:
-        requests.post(url, json=payload, headers=headers)
-    except Exception as e:
-        print(f"Error enviando mensaje: {e}")
+    payload = {"messaging_product": "whatsapp", "to": numero, "type": "text", "text": {"body": texto}}
+    requests.post(url, json=payload, headers=headers)
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=int(os.environ.get("PORT", 5000)))
