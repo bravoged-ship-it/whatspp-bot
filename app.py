@@ -12,8 +12,9 @@ PHONE_NUMBER_ID = "975359055662384"
 
 def obtener_respuesta_gemini(mensaje_usuario):
     api_key = os.getenv("GEMINI_API_KEY")
-    # URL estable para Gemini 1.5 Flash
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={api_key}"
+    
+    # Probamos con la ruta estable v1
+    url = f"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={api_key}"
     
     headers = {'Content-Type': 'application/json'}
     payload = {
@@ -21,6 +22,7 @@ def obtener_respuesta_gemini(mensaje_usuario):
             "parts": [{"text": f"Eres el asistente de ULMA Packaging México. Responde breve y amable en español: {mensaje_usuario}"}]
         }]
     }
+    # ... resto del código igual ...
 
     try:
         response = requests.post(url, json=payload, headers=headers)
