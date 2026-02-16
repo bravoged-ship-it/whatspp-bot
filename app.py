@@ -1,7 +1,6 @@
 import os
 import re
 import requests
-import psycopg2
 from flask import Flask, request
 
 app = Flask(__name__)
@@ -10,12 +9,10 @@ app = Flask(__name__)
 VERIFY_TOKEN = os.getenv("VERIFY_TOKEN")
 ACCESS_TOKEN = os.getenv("ACCESS_TOKEN")
 PHONE_NUMBER_ID = "975359055662384"
-DATABASE_URL = os.getenv("DATABASE_URL")
 
 def obtener_respuesta_gemini(mensaje_usuario):
     api_key = os.getenv("GEMINI_API_KEY")
-    
-    # URL estable y correcta para Gemini 1.5 Flash
+    # URL estable para Gemini 1.5 Flash
     url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={api_key}"
     
     headers = {'Content-Type': 'application/json'}
@@ -26,38 +23,17 @@ def obtener_respuesta_gemini(mensaje_usuario):
     }
 
     try:
-        print(f"Intentando conectar con Gemini...")
         response = requests.post(url, json=payload, headers=headers)
         res_json = response.json()
         
         if 'candidates' in res_json and len(res_json['candidates']) > 0:
             return res_json['candidates'][0]['content']['parts'][0]['text']
         else:
-            print(f"Error detallado de la API: {res_json}")
+            print(f"Error Gemini API: {res_json}")
             return "Lo siento, por ahora no puedo procesar esa duda. Escribe 'A' para ver el menú."
-            
     except Exception as e:
-        print(f"Error de conexión: {e}")
-        return "Hubo un error de conexión con la IA. Por favor, intenta más tarde."
-
-def guardar_mensaje(telefono, mensaje):
-    try:
-        conn = psycopg2.connect(DATABASE_URL)
-        cur = conn.cursor()
-        cur.execute("""
-            CREATE TABLE IF NOT EXISTS mensajes (
-                id SERIAL PRIMARY KEY,
-                telefono VARCHAR(20),
-                mensaje TEXT,
-                fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            );
-        """)
-        cur.execute("INSERT INTO mensajes (telefono, mensaje) VALUES (%s, %s)", (telefono, mensaje))
-        conn.commit()
-        cur.close()
-        conn.close()
-    except Exception as e:
-        print(f"Error en BD: {e}")
+        print(f"Error conexión Gemini: {e}")
+        return "Hubo un error de conexión con la IA."
 
 @app.route('/webhook', methods=['GET'])
 def verify_webhook():
@@ -83,17 +59,16 @@ def handle_messages():
                 text = msg.get('text', {}).get('body', "").strip()
                 text_lower = text.lower()
 
+                # Normalización de número México
                 if from_number.startswith("521") and len(from_number) == 13:
                     from_number = "52" + from_number[3:]
                 
-                guardar_mensaje(from_number, text)
-
                 respuesta_bot = ""
                 saludos = ["hola", "buen", "dia", "tarde", "noche", "menu", "inicio", "empezar"]
                 es_saludo = any(s in text_lower for s in saludos)
                 tiene_datos = ("@" in text_lower and "." in text_lower) or bool(re.search(r'\d{8,}', text_lower))
 
-                # --- LÓGICA DE MENÚS (TUS SUBMENÚS COMPLETOS) ---
+                # --- LÓGICA DE MENÚS ---
                 if es_saludo or text_lower == "a":
                     respuesta_bot = "🙌 ¡Hola! Gracias por comunicarte a *ULMA Packaging México*.\n\nElija una opción:\n\n1️⃣ Venta de maquinaria\n2️⃣ Servicio técnico y repuestos\n3️⃣ Administración y Finanzas\n4️⃣ Atención personalizada"
                 elif text == "1":
