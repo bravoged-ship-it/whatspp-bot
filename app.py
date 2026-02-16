@@ -14,11 +14,9 @@ DATABASE_URL = os.getenv("DATABASE_URL")
 
 def obtener_respuesta_gemini(mensaje_usuario):
     api_key = os.getenv("GEMINI_API_KEY")
-    # Intentaremos primero con v1beta que es donde Google suele esconder a Flash
-    opciones_url = [
-        f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={api_key}",
-        f"https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent?key={api_key}"
-    ]
+    
+    # URL estable y correcta para Gemini 1.5 Flash
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={api_key}"
     
     headers = {'Content-Type': 'application/json'}
     payload = {
@@ -27,22 +25,20 @@ def obtener_respuesta_gemini(mensaje_usuario):
         }]
     }
 
-    for url in opciones_url:
-        try:
-            print(f"Probando conexión con: {url}")
-            response = requests.post(url, json=payload, headers=headers)
-            res_json = response.json()
+    try:
+        print(f"Intentando conectar con Gemini...")
+        response = requests.post(url, json=payload, headers=headers)
+        res_json = response.json()
+        
+        if 'candidates' in res_json and len(res_json['candidates']) > 0:
+            return res_json['candidates'][0]['content']['parts'][0]['text']
+        else:
+            print(f"Error detallado de la API: {res_json}")
+            return "Lo siento, por ahora no puedo procesar esa duda. Escribe 'A' para ver el menú."
             
-            if 'candidates' in res_json and len(res_json['candidates']) > 0:
-                return res_json['candidates'][0]['content']['parts'][0]['text']
-            else:
-                print(f"Fallo en esta URL, intentando la siguiente... Error: {res_json}")
-                continue
-        except Exception as e:
-            print(f"Error en intento: {e}")
-            continue
-            
-    return "Lo siento, por ahora no puedo procesar esa duda. Escribe 'A' para ver el menú."
+    except Exception as e:
+        print(f"Error de conexión: {e}")
+        return "Hubo un error de conexión con la IA. Por favor, intenta más tarde."
 
 def guardar_mensaje(telefono, mensaje):
     try:
@@ -97,7 +93,7 @@ def handle_messages():
                 es_saludo = any(s in text_lower for s in saludos)
                 tiene_datos = ("@" in text_lower and "." in text_lower) or bool(re.search(r'\d{8,}', text_lower))
 
-                # --- MENÚS ---
+                # --- LÓGICA DE MENÚS (TUS SUBMENÚS COMPLETOS) ---
                 if es_saludo or text_lower == "a":
                     respuesta_bot = "🙌 ¡Hola! Gracias por comunicarte a *ULMA Packaging México*.\n\nElija una opción:\n\n1️⃣ Venta de maquinaria\n2️⃣ Servicio técnico y repuestos\n3️⃣ Administración y Finanzas\n4️⃣ Atención personalizada"
                 elif text == "1":
