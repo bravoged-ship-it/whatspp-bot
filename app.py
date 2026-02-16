@@ -18,7 +18,7 @@ def obtener_respuesta_gemini(mensaje_usuario):
         genai.configure(api_key=api_key)
         
         # Usamos el modelo estable
-        model = genai.GenerativeModel('gemini-1.5-flash')
+        model = genai.GenerativeModel('gemini-2.5-flash')
         
         prompt = f"Eres el asistente de ULMA Packaging México. Responde breve y amable en español: {mensaje_usuario}"
         
