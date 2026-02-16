@@ -1,6 +1,7 @@
 import os
 import re
 import requests
+import google.generativeai as genai
 from flask import Flask, request
 
 app = Flask(__name__)
@@ -10,32 +11,27 @@ VERIFY_TOKEN = os.getenv("VERIFY_TOKEN")
 ACCESS_TOKEN = os.getenv("ACCESS_TOKEN")
 PHONE_NUMBER_ID = "975359055662384"
 
+# Configuración de IA con la librería oficial
 def obtener_respuesta_gemini(mensaje_usuario):
-    api_key = os.getenv("GEMINI_API_KEY")
-    
-    # Probamos con la ruta estable v1
-    url = f"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={api_key}"
-    
-    headers = {'Content-Type': 'application/json'}
-    payload = {
-        "contents": [{
-            "parts": [{"text": f"Eres el asistente de ULMA Packaging México. Responde breve y amable en español: {mensaje_usuario}"}]
-        }]
-    }
-    # ... resto del código igual ...
-
     try:
-        response = requests.post(url, json=payload, headers=headers)
-        res_json = response.json()
+        api_key = os.getenv("GEMINI_API_KEY")
+        genai.configure(api_key=api_key)
         
-        if 'candidates' in res_json and len(res_json['candidates']) > 0:
-            return res_json['candidates'][0]['content']['parts'][0]['text']
+        # Usamos el modelo estable
+        model = genai.GenerativeModel('gemini-1.5-flash')
+        
+        prompt = f"Eres el asistente de ULMA Packaging México. Responde breve y amable en español: {mensaje_usuario}"
+        
+        response = model.generate_content(prompt)
+        
+        if response.text:
+            return response.text
         else:
-            print(f"Error Gemini API: {res_json}")
             return "Lo siento, por ahora no puedo procesar esa duda. Escribe 'A' para ver el menú."
+            
     except Exception as e:
-        print(f"Error conexión Gemini: {e}")
-        return "Hubo un error de conexión con la IA."
+        print(f"Error con Librería Gemini: {e}")
+        return "Hubo un error al consultar a la IA. Intenta de nuevo o escribe 'A'."
 
 @app.route('/webhook', methods=['GET'])
 def verify_webhook():
@@ -61,7 +57,7 @@ def handle_messages():
                 text = msg.get('text', {}).get('body', "").strip()
                 text_lower = text.lower()
 
-                # Normalización de número México
+                # Normalización de número para México
                 if from_number.startswith("521") and len(from_number) == 13:
                     from_number = "52" + from_number[3:]
                 
@@ -70,7 +66,7 @@ def handle_messages():
                 es_saludo = any(s in text_lower for s in saludos)
                 tiene_datos = ("@" in text_lower and "." in text_lower) or bool(re.search(r'\d{8,}', text_lower))
 
-                # --- LÓGICA DE MENÚS ---
+                # --- LÓGICA DE MENÚS (TUS SUBMENÚS COMPLETOS) ---
                 if es_saludo or text_lower == "a":
                     respuesta_bot = "🙌 ¡Hola! Gracias por comunicarte a *ULMA Packaging México*.\n\nElija una opción:\n\n1️⃣ Venta de maquinaria\n2️⃣ Servicio técnico y repuestos\n3️⃣ Administración y Finanzas\n4️⃣ Atención personalizada"
                 elif text == "1":
