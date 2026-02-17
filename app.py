@@ -76,7 +76,7 @@ def handle_messages():
                 tiene_datos = ("@" in text_lower and "." in text_lower) or bool(re.search(r'\d{8,}', text_lower))
 
                 # --- LÓGICA DE MENÚS (TUS SUBMENÚS COMPLETOS) ---
-                               if es_saludo or text_lower == "a":
+                if es_saludo or text_lower == "a":
                     respuesta_bot = (
                         "🙌 ¡Hola! Gracias por comunicarte a *ULMA Packaging México*.\n\n"
                         "Elija una opción:\n\n"
