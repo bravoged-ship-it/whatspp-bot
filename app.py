@@ -17,7 +17,7 @@ def obtener_respuesta_gemini(mensaje_usuario):
         api_key = os.getenv("GEMINI_API_KEY")
         genai.configure(api_key=api_key)
         
-        # Usamos el modelo estable 2.5 como acordamos
+        # Usamos el modelo estable 2.5
         model = genai.GenerativeModel('gemini-2.5-flash')
 
         contexto_ulma = (
