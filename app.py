@@ -9,7 +9,7 @@ app = Flask(__name__)
 # --- CONFIGURACIÓN ---
 VERIFY_TOKEN = os.getenv("VERIFY_TOKEN")
 ACCESS_TOKEN = os.getenv("ACCESS_TOKEN")
-PHONE_NUMBER_ID = "975359055662384"
+PHONE_NUMBER_ID = os.getenv("PHONE_NUMBER_ID")
 
 # Configuración de IA con la librería oficial
 def obtener_respuesta_gemini(mensaje_usuario):
