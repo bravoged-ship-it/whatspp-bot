@@ -26,6 +26,8 @@ async def verify_webhook(request: Request):
         return int(params.get("hub.challenge"))
     return "Error de verificación"
 
+# ... (todo lo anterior igual)
+
 @app.post("/webhook")
 async def handle_whatsapp_message(request: Request):
     data = await request.json()
@@ -36,14 +38,19 @@ async def handle_whatsapp_message(request: Request):
             user_number = message_obj["from"]
             user_text = message_obj["text"]["body"]
             
-            print(f"Mensaje de usuario: {user_text}")
+            # --- FILTRO PARA NÚMEROS DE MÉXICO ---
+            # Si el número viene como 521..., le quitamos el '1' para que Meta no se confunda
+            if user_number.startswith("521"):
+                user_number = "52" + user_number[3:]
+            # --------------------------------------
 
-            # 1. Generar respuesta con Gemini 2.5
+            print(f"Pregunta: {user_text} de {user_number}")
+
+            # 1. Generar respuesta
             response = model.generate_content(user_text)
             bot_answer = response.text
-            print(f"Respuesta de Gemini: {bot_answer}")
 
-            # 2. Enviar a WhatsApp (Corregido: headers=headers)
+            # 2. Enviar a WhatsApp
             url = f"https://graph.facebook.com/v21.0/{os.getenv('PHONE_NUMBER_ID')}/messages"
             headers = {"Authorization": f"Bearer {os.getenv('ACCESS_TOKEN')}"}
             json_data = {
@@ -54,6 +61,8 @@ async def handle_whatsapp_message(request: Request):
             
             r = requests.post(url, headers=headers, json=json_data)
             print(f"Estado de WhatsApp: {r.status_code}")
+            if r.status_code != 200:
+                print(f"Detalle del error de Meta: {r.json()}") # Esto nos dirá el porqué exacto
             
     except Exception as e:
         print(f"Error procesando: {e}")
