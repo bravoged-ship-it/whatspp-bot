@@ -8,13 +8,15 @@ load_dotenv()
 
 app = FastAPI()
 
-# Configurar Gemini (Usamos el nombre que pusiste en Render)
+# Configurar Gemini con la versión que acordamos
 genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
-model = genai.GenerativeModel('gemini-1.5-flash')
+
+# Usamos exactamente el nombre que te funcionaba
+model = genai.GenerativeModel(model_name="models/gemini-2.5-flash")
 
 @app.get("/")
 def home():
-    return {"status": "Bot encendido y operando"}
+    return {"status": "Bot Gemini 2.5 Flash encendido"}
 
 @app.get("/webhook")
 async def verify_webhook(request: Request):
@@ -34,9 +36,9 @@ async def handle_whatsapp_message(request: Request):
             user_number = message_obj["from"]
             user_text = message_obj["text"]["body"]
             
-            print(f"Pregunta del usuario: {user_text}")
+            print(f"Mensaje de usuario: {user_text}")
 
-            # 1. Gemini genera la respuesta
+            # 1. Generar respuesta con Gemini 2.5
             response = model.generate_content(user_text)
             bot_answer = response.text
             print(f"Respuesta de Gemini: {bot_answer}")
@@ -51,9 +53,9 @@ async def handle_whatsapp_message(request: Request):
             }
             
             r = requests.post(url, headers=headers, json=json_data)
-            print(f"Estado de envío a WhatsApp: {r.status_code}")
+            print(f"Estado de WhatsApp: {r.status_code}")
             
     except Exception as e:
-        print(f"Error procesando mensaje: {e}")
+        print(f"Error procesando: {e}")
         
     return {"status": "ok"}
